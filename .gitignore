@@ -1,12 +1,55 @@
-*.class
+# common ignore
+*~
+MANIFEST.MF
+target/
 
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
+src/main/webapp/WEB-INF/deploy
+
+pom.xml.orig
+*.versionsBackup
+
+*.class
 
 # Package Files #
 *.jar
 *.war
-*.ear
+
+# boilerplate generated classes #
+.apt_generated/
+
+# more caches and things from deploy #
+war/WEB-INF/deploy/
+war/WEB-INF/classes/
+
+# eclipse specific
+.settings
+.settings/
+.project
+.classpath
+.metadata
+
+#idea specific
+.idea/
+*.iml
+
+# Locally stored "Eclipse launch configurations"
+*.launch
+
+# unix specific
+.DS_Store
+/*.*/.DS_Store
+.directory
+
+# static plugins
+.pmd
+
+#gradle specific
+.gradle/
+build/
+
+# additional ignores
+node_modules/
+doc/
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
