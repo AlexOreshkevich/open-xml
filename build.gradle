@@ -1,0 +1,37 @@
+apply plugin: 'java'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+// project version
+version = '0.1-SNAPSHOT'
+
+// extended properties
+ext {
+    springVersion = "3.2.9.RELEASE"
+    springDataVersion = "1.5.1.RELEASE"
+    mongoJavaDriverVersion = "2.12.2"
+    cglibVersion = "3.1"
+    jstlVersion = "1.2"
+    servletApiVersion = "3.0.1"
+    jacksonVersion = "2.3.3"
+
+    junitVersion = "4.11"
+}
+
+dependencies {
+
+    compile 'org.apache.logging.log4j:log4j:2.0'
+
+    compile 'org.openoffice:ridl:3.2.1'
+    compile 'org.openoffice:juh:3.2.1'
+    compile 'org.openoffice:unoil:3.2.1'
+    compile 'org.openoffice:jurt:3.2.1'
+
+    testCompile "junit:junit:$junitVersion"
+}
