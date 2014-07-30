@@ -36,8 +36,6 @@ jar {
     }
     configurations.compile.collect {
         File file ->
-            file.name
-            println file.path
             if (file.path.contains("openoffice")) {
                 from zipTree(file.path)
             }
