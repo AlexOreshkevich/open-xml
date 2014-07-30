@@ -1,8 +1,8 @@
 apply plugin: 'java'
 apply plugin: 'idea'
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+sourceCompatibility = 1.6
+targetCompatibility = 1.6
 
 repositories {
     mavenLocal()
@@ -23,11 +23,23 @@ ext {
 dependencies {
 
     compile "org.apache.logging.log4j:log4j:$log4jVersion"
-
     compile "org.openoffice:ridl:$openOfficeVersion"
     compile "org.openoffice:juh:$openOfficeVersion"
     compile "org.openoffice:unoil:$openOfficeVersion"
     compile "org.openoffice:jurt:$openOfficeVersion"
 
     testCompile "junit:junit:$junitVersion"
+}
+jar {
+    manifest {
+        attributes 'Main-class': 'pro.redsoft.openxml.dgst'
+    }
+    configurations.compile.collect {
+        File file ->
+            file.name
+            println file.path
+            if (file.path.contains("openoffice")) {
+                from zipTree(file.path)
+            }
+    }
 }
