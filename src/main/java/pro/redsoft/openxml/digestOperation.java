@@ -14,7 +14,7 @@ import java.util.logging.Logger;
  * @author John
  */
 public class digestOperation {
-  static final Logger LOG = Logger.getLogger(dgst.class.getName());
+  static final Logger LOG = Logger.getLogger(Dgst.class.getName());
   String type;
   String redlineid;
   String afterTxt;

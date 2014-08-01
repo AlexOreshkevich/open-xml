@@ -41,3 +41,15 @@ jar {
             }
     }
 }
+
+sourceSets {
+    test {
+        output.resourcesDir = "build/classes/test"
+    }
+    main {
+        output.resourcesDir = "build/classes/main"
+    }
+}
+test{
+
+}

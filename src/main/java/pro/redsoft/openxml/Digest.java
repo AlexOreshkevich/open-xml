@@ -24,7 +24,7 @@ import java.util.logging.Logger;
 public class Digest {
 
   static final Logger LOG = Logger.getLogger(Digest.class.getName());
-  //private static Digest dgst = null;
+  //private static Digest digestInst = null;
   //private static boolean ooInit = false;
   private String oopath = "";
   private OOApi oo = null;

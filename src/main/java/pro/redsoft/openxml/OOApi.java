@@ -118,7 +118,6 @@ public class OOApi {
   }
 
   void mergeEtalon(String file1) throws Exception {
-
     LOG.info("merge with file :" + file1);
     prop.setProperty("etalon", file1);
     try {
