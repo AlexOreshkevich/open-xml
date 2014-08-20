@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package pro.redsoft.openxml;
+package pro.redsoft.openxml.openoffice;
 
 import com.sun.star.beans.Property;
 import com.sun.star.beans.PropertyValue;
@@ -20,11 +20,14 @@ import com.sun.star.lang.XServiceInfo;
 import com.sun.star.text.*;
 import com.sun.star.uno.UnoRuntime;
 import com.sun.star.util.XCloseable;
+import pro.redsoft.openxml.DigestServiceException;
+import pro.redsoft.openxml.logging.DigestLogger;
+import pro.redsoft.openxml.logging.LoggingService;
 
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamWriter;
 import java.io.File;
-import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -32,16 +35,16 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * @author John
+ * @author crzang
  */
 public class OOApi {
 
-  static final Logger LOG = Logger.getLogger(OOApi.class.getName());
+  static final DigestLogger LOG = LoggingService.getLogger(OOApi.class);
   XDispatchProvider Xdp = null;
   XComponent xComp = null;
   XTextDocument xDoc = null;
   XCloseable xClose = null;
-  List<digestContainer> lstDgst;
+  List<DigestContainer> lstDgst;
   private XComponentLoader xCLoader;
   private XDispatchHelper xDispather;
   private Properties prop = null;
@@ -79,7 +82,7 @@ public class OOApi {
       while (xComp == null) {
         xComp = xCLoader.loadComponentFromURL(sUrl, "_blank", 0, szArgs);
         if (xComp == null) {
-          LOG.log(Level.INFO, "xComp is NULL :" + countFail);
+          LOG.info("xComp is NULL :" + countFail);
           countFail++;
           if (countFail > 20) {
             throw new RuntimeException("Error init OpenOffice component");
@@ -95,7 +98,7 @@ public class OOApi {
       while (xDoc == null) {
         xDoc = UnoRuntime.queryInterface(XTextDocument.class, xComp);
         if (xDoc == null) {
-          LOG.log(Level.INFO, "xComp is NULL :" + countFail);
+          LOG.info("xComp is NULL :" + countFail);
           countFail++;
           if (countFail > 20) {
             throw new RuntimeException("Error init OpenOffice component");
@@ -110,7 +113,7 @@ public class OOApi {
       LOG.info("done.");
       //  findCorrection(true);
     } catch (Exception ex) {
-      LOG.log(Level.SEVERE, "", ex);
+      LOG.error("",ex);
       throw ex;
     }
 
@@ -150,12 +153,12 @@ public class OOApi {
       xDispather.executeDispatch(Xdp, ".uno:AcceptTrackedChanges", "", 0, Args3);
       LOG.info("done");
     } catch (Exception ex) {
-      LOG.log(Level.SEVERE, "", ex);
+      LOG.error("",ex);
       throw ex;
     }
   }
 
-  void saveMerged(String outdoc) {
+  void saveMerged(String outdoc) throws DigestServiceException {
     PropertyValue[] Args1 = new PropertyValue[2];
     Args1[0] = new PropertyValue();
     Args1[0].Name = "Overwrite";
@@ -168,24 +171,24 @@ public class OOApi {
     try {
       xStore.storeAsURL(convertToURL(outdoc), Args1);
     } catch (IOException ex) {
-      LOG.log(Level.SEVERE, "", ex);
+      LOG.error("",ex);
     }
 
   }
 
-  void exportDgst(String dgstFile) {
+  void exportDgst(OutputStream dgstFile) throws DigestServiceException {
     LOG.info("Export to :" + dgstFile);
     try {
-      lstDgst = new ArrayList<digestContainer>();
+      lstDgst = new ArrayList<DigestContainer>();
       findCorrection(false);
       export(dgstFile);
       LOG.info("done");
     } catch (com.sun.star.uno.Exception ex) {
-      LOG.log(Level.SEVERE, "", ex);
+      LOG.error("",ex);
     }
   }
 
-  String convertToURL(String url) {
+  String convertToURL(String url) throws DigestServiceException {
     String sUrl = url;
     if (sUrl.indexOf("private:") != 0) {
       try {
@@ -194,13 +197,13 @@ public class OOApi {
         sbTmp.append(source.getCanonicalPath().replace('\\', '/'));
         sUrl = sbTmp.toString();
       } catch (java.io.IOException ex) {
-        LOG.log(Level.SEVERE, "", ex);
+        LOG.error("",ex);
       }
     }
     return sUrl;
   }
 
-  private void findCorrection(boolean isEtalon) throws com.sun.star.uno.Exception {
+  private void findCorrection(boolean isEtalon) throws com.sun.star.uno.Exception, DigestServiceException {
     String etalon = prop.getProperty("etalon");
     if (xDoc != null) {
       XText xText = xDoc.getText();
@@ -212,7 +215,7 @@ public class OOApi {
       XTextRange RedlineStart = null;
       String beforeTxt = "";
       String afferTxt = "";
-      digestOperation prevoper = null;
+      DigestOperation prevoper = null;
       XTextRange prevRedlineEnd = null;
       int paraCounter = 0;
       boolean prevRedlineIsTable = false;
@@ -225,9 +228,9 @@ public class OOApi {
         if (!isFirst) {
           hasRedline = false;
         }
-        LOG.fine("analize paragraph :" + paraCounter);
+        LOG.debug("analize paragraph :" + paraCounter);
         tRedline = false;
-        digestContainer dgstCont = null;
+        DigestContainer dgstCont = null;
 
         String curTxt = "";
         List<XTextRange> arrTxt = new ArrayList<XTextRange>();
@@ -248,11 +251,13 @@ public class OOApi {
         }
         if (cur != null) {
           XServiceInfo ServInfo = UnoRuntime.queryInterface(XServiceInfo.class, xTextElement.getAnchor());
-                    /*for(String s:ServInfo.getSupportedServiceNames()){
-                     LOG.fine(s);
-                     }*/
+          List<String> kk=new ArrayList<String>();
+                    for(String s:ServInfo.getSupportedServiceNames()){
+                     //LOG.debug(s);
+                      kk.add(s);
+                    }
           if (ServInfo.supportsService("com.sun.star.text.TextTable")) {
-            LOG.fine("ServInfo.supportsService(\"com.sun.star.text.TextTable\")");
+            LOG.debug("ServInfo.supportsService(\"com.sun.star.text.TextTable\")");
             XTextTable xTbl = UnoRuntime.queryInterface(XTextTable.class, xTextElement);
 
             Boolean isStart = false;
@@ -271,27 +276,27 @@ public class OOApi {
                 if (rline[i].Name.equals("RedlineIdentifier")) {
                   RedlineIdentifier = (String) rline[i].Value;
                 }
-                //LOG.fine("Name : " + rline[i].Name + ". Type : " + rline[i].Value.toString());
+                //LOG.debug("Name : " + rline[i].Name + ". Type : " + rline[i].Value.toString());
               }
               String ss = "";
               if (tRedline) {
-                LOG.fine("tRedline");
+                LOG.debug("tRedline");
                 if (isStart) {
-                  LOG.fine("isStart");
+                  LOG.debug("isStart");
                 } else {
                   if (!prevRedlineIsTable) {
-                    LOG.fine("!prevRedlineIsTable");
+                    LOG.debug("!prevRedlineIsTable");
                     if (dgstCont == null) {
-                      LOG.fine("dgstCont == null");
-                      dgstCont = new digestContainer();
+                      LOG.debug("dgstCont == null");
+                      dgstCont = new DigestContainer();
                       dgstCont.setPrevPara(prevPara);
                       dgstCont.setParaNum(paraCounter, etalon);
                     }
                     if (isEtalon) {
-                      LOG.fine("isEtalon");
+                      LOG.debug("isEtalon");
                       etaloRedlines.add(RedlineIdentifier);
                     } else if (!etaloRedlines.contains(RedlineIdentifier)) {
-                      digestOperation oper = new digestOperation("Modify table", RedlineIdentifier, "Таблица изменена/удалена", "Таблица изменена/удалена", firstThreeRow + "<b>Таблица изменена/удалена</b>");
+                      DigestOperation oper = new DigestOperation("Modify table", RedlineIdentifier, "Таблица изменена/удалена", "Таблица изменена/удалена", firstThreeRow + "<b>Таблица изменена/удалена</b>");
                       dgstCont.addOperation(oper);
                     }
                     prevoper = null;
@@ -308,15 +313,15 @@ public class OOApi {
               }
             } catch (Exception e) {
               //  e.printStackTrace();
-              LOG.log(Level.SEVERE, "", e);
+              LOG.error("",e);
             }
             if (!tRedline) {
-              LOG.fine("!tRedline");
+              LOG.debug("!tRedline");
               prevPara = firstThreeRow;
             }
 
           } else {
-            LOG.fine("!ServInfo.supportsService(\"com.sun.star.text.TextTable\")");
+            LOG.debug("!ServInfo.supportsService(\"com.sun.star.text.TextTable\")");
             XParagraphCursor xpara = UnoRuntime.queryInterface(XParagraphCursor.class, cur);
             //if(!xpara.isStartOfParagraph())
             xpara.gotoStartOfParagraph(false);
@@ -327,7 +332,7 @@ public class OOApi {
                 XEnumerationAccess.class,
                 xTextElement);
             if (xParaEnumerationAccess != null) {
-              LOG.fine("xParaEnumerationAccess != null");
+              LOG.debug("xParaEnumerationAccess != null");
               XEnumeration xTextPortionEnum = xParaEnumerationAccess.createEnumeration();
               while (xTextPortionEnum.hasMoreElements()) {
                 com.sun.star.text.XTextRange xTextPortion =
@@ -351,15 +356,17 @@ public class OOApi {
                 XPropertySet.class, xTextPortion);
             XPropertySetInfo xPropSetInfo = xPropSet.getPropertySetInfo();
 
+            Property[] pr = xPropSetInfo.getProperties();
 
             if (xPropSetInfo.hasPropertyByName("RedlineType")) {
-              LOG.fine("xPropSetInfo.hasPropertyByName(\"RedlineType\")");
+
+              LOG.debug("xPropSetInfo.hasPropertyByName(\"RedlineType\")");
               try {
                 String RedlineIdentifier = (String) xPropSet.getPropertyValue("RedlineIdentifier");
                 String RedlineType = (String) xPropSet.getPropertyValue("RedlineType");
                 Boolean isStart = (Boolean) xPropSet.getPropertyValue("IsStart");
                 if (isStart) {
-                  LOG.fine("isStart");
+                  LOG.debug("isStart");
                   hasRedline = true;
                   RedlineStart = xTextPortion;
                   if (prevRedlineEnd == null) {
@@ -371,24 +378,24 @@ public class OOApi {
                   }
                   beforeTxt = cur.getString();
                   if (prevoper != null) {
-                    LOG.fine("prevoper != null");
+                    LOG.debug("prevoper != null");
                     prevoper.setAffetTxt(beforeTxt);
                   }
 
                 } else {
-                  LOG.fine("!isStart");
+                  LOG.debug("!isStart");
                   RedlineEnd = xTextPortion;
                   String redlineTXT = "";
                   boolean skip = false;
                   if (RedlineStart != null) {
-                    LOG.fine("RedlineStart != null");
+                    LOG.debug("RedlineStart != null");
                     cur.gotoRange(RedlineStart.getStart(), false);
                     cur.gotoRange(RedlineEnd.getEnd(), true);
                     redlineTXT = cur.getString();
 
 
                   } else {
-                    LOG.fine("RedlineStart == null");
+                    LOG.debug("RedlineStart == null");
                     cur.gotoRange(xTextPortion.getStart(), false);
                     cur.gotoRange(RedlineEnd.getEnd(), true);
                     redlineTXT = cur.getString();
@@ -397,7 +404,7 @@ public class OOApi {
                   }
 
                   if (!skip) {
-                    LOG.fine("!skip");
+                    LOG.debug("!skip");
                     XParagraphCursor xpara = UnoRuntime.queryInterface(XParagraphCursor.class, cur);
                     xpara.gotoRange(RedlineEnd.getStart(), false);
                     boolean needAffer = true;
@@ -414,8 +421,8 @@ public class OOApi {
                       afferTxt = xpara.getString();
                     }
                     if (dgstCont == null) {
-                      LOG.fine("dgstCont == null");
-                      dgstCont = new digestContainer();
+                      LOG.debug("dgstCont == null");
+                      dgstCont = new DigestContainer();
                       if (prevPara.trim().isEmpty() && paraCounter == 0) {
 
                         dgstCont.setPrevPara("НАЧАЛО ФАЙЛА");
@@ -428,18 +435,18 @@ public class OOApi {
                       dgstCont.setParaNum(paraCounter, etalon);
                     }
                     if (annotation != null && redlineTXT.isEmpty()) {
-                      LOG.fine("annotation != null && redlineTXT.isEmpty()");
+                      LOG.debug("annotation != null && redlineTXT.isEmpty()");
                       XPropertySet xAnnotationProps = (XPropertySet) UnoRuntime.queryInterface(XPropertySet.class, annotation);
-                      //LOG.fine(xAnnotationProps.getPropertyValue("Author")+";"+xAnnotationProps.getPropertyValue("Content"));
+                      //LOG.debug(xAnnotationProps.getPropertyValue("Author")+";"+xAnnotationProps.getPropertyValue("Content"));
                       RedlineType += " annotation";
                       redlineTXT = (String) xAnnotationProps.getPropertyValue("Content");
                     }
                     if (isEtalon) {
-                      LOG.fine("isEtalon");
+                      LOG.debug("isEtalon");
                       etaloRedlines.add(RedlineIdentifier);
                     } else if (!etaloRedlines.contains(RedlineIdentifier)) {
-                      LOG.fine("!etaloRedlines.contains(RedlineIdentifier)");
-                      digestOperation oper = new digestOperation(RedlineType, RedlineIdentifier, afferTxt, beforeTxt, redlineTXT);
+                      LOG.debug("!etaloRedlines.contains(RedlineIdentifier)");
+                      DigestOperation oper = new DigestOperation(RedlineType, RedlineIdentifier, afferTxt, beforeTxt, redlineTXT);
                       prevoper = oper;
                       dgstCont.addOperation(oper);
                       prevRedlineEnd = RedlineEnd;
@@ -452,23 +459,17 @@ public class OOApi {
                     prevRedlineIsTable = false;
 
                   } else {
-                    LOG.fine("skip");
+                    LOG.debug("skip");
                   }
                 }
 
               } catch (Exception ex) {
-                LOG.log(Level.SEVERE, "", ex);
+                LOG.error("",ex);
               }
               //prevPara = "";
               // hasRedline = true;
             } else {
-              if (!isEtalon && paraCounter < 10) {
-                Property[] pr = xPropSetInfo.getProperties();
-                for (int i = 0; i < pr.length; ++i) {
-                  LOG.fine("Name : " + pr[i].Name + ". Type : " + pr[i].Type.getTypeName());
-                }
-              }
-              LOG.fine("!xPropSetInfo.hasPropertyByName(\"RedlineType\")");
+              LOG.debug("!xPropSetInfo.hasPropertyByName(\"RedlineType\")");
               //if(!curTxt.isEmpty())
             }
             annotation = UnoRuntime.queryInterface(XTextField.class, xPropSet.getPropertyValue("TextField"));
@@ -488,7 +489,7 @@ public class OOApi {
           }
 
         } else {
-          LOG.fine("cur == null");
+          LOG.debug("cur == null");
         }
         if (!hasRedline && !curTxt.trim().isEmpty() && !tRedline) {
           prevPara = curTxt;
@@ -502,11 +503,11 @@ public class OOApi {
       }
       //xDoc.dispose();
     } else {
-      LOG.fine("xDoc is null");
+      LOG.debug("xDoc is null");
     }
   }
 
-  void close() {
+  void close() throws DigestServiceException {
     LOG.info("try close");
     try {
       Xdp = null;
@@ -523,11 +524,11 @@ public class OOApi {
         //xDoc.dispose();
       }
     } catch (Exception ex) {
-      LOG.log(Level.SEVERE, "", ex);
+      LOG.error("",ex);
     }
   }
 
-  private void export(String dgstFile) {
+  private void export(OutputStream dgstFile) throws DigestServiceException {
     try {
       prop.setProperty("BlockCount", String.valueOf(lstDgst.size()));
       Calendar c = Calendar.getInstance();
@@ -535,10 +536,9 @@ public class OOApi {
       prop.setProperty("ReportTime", dateFormat.format(c.getTime()));
 
       XMLOutputFactory factory = XMLOutputFactory.newInstance();
-      FileOutputStream ff = new FileOutputStream(dgstFile);
       XMLStreamWriter writer =
           factory.createXMLStreamWriter(
-              ff, "UTF-8");
+            dgstFile, "UTF-8");
 
       writer.writeStartDocument();
       writer.writeStartElement("diffdigest");
@@ -556,8 +556,8 @@ public class OOApi {
       writer.writeEndElement();
       writer.writeEndElement();
       writer.writeStartElement("redlines");
-      LOG.log(Level.INFO, "count redline :" + lstDgst.size());
-      for (digestContainer d : lstDgst) {
+      LOG.info("count redline :" + lstDgst.size());
+      for (DigestContainer d : lstDgst) {
         writer.writeStartElement("redline");
         writer.writeAttribute("block-id", String.valueOf(lstDgst.indexOf(d)));
         d.exportData(writer);
@@ -568,13 +568,13 @@ public class OOApi {
 
       writer.flush();
       writer.close();
-      ff.close();
+      dgstFile.close();
     } catch (Exception ex) {
-      LOG.log(Level.SEVERE, "", ex);
+      LOG.error("",ex);
     }
   }
 
-  private String getThreeRow(XTextTable xTbl) {
+  private String getThreeRow(XTextTable xTbl) throws DigestServiceException {
     StringBuilder sb = new StringBuilder();
     sb.append("<table border='1'>");
     int rowCount = 0;
@@ -627,7 +627,7 @@ public class OOApi {
         sb.append("</td>");
       }
     } catch (Exception ex) {
-      LOG.log(Level.SEVERE, "", ex);
+      LOG.error("",ex);
     }
     sb.append("</tr>");
     sb.append("</table>");

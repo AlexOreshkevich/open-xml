@@ -2,7 +2,11 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package pro.redsoft.openxml;
+package pro.redsoft.openxml.openoffice;
+
+import pro.redsoft.openxml.DigestServiceException;
+import pro.redsoft.openxml.logging.DigestLogger;
+import pro.redsoft.openxml.logging.LoggingService;
 
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
@@ -12,11 +16,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * @author John
+ * @author crzang
  */
-public class digestContainer {
+public class DigestContainer {
 
-  List<digestOperation> lst;
+    static final DigestLogger LOG = LoggingService.getLogger(DigestContainer.class);
+  List<DigestOperation> lst;
   String prevPara = "";
   int paraNum = 0;
   String doc = "";
@@ -29,15 +34,15 @@ public class digestContainer {
   }
 
 
-  public digestContainer() {
-    lst = new ArrayList<digestOperation>();
+  public DigestContainer() {
+    lst = new ArrayList<DigestOperation>();
   }
 
   void addOperation(String type, String Id, String affer, String before, String val) {
-    lst.add(new digestOperation(type, Id, affer, before, val));
+    lst.add(new DigestOperation(type, Id, affer, before, val));
   }
 
-  void addOperation(digestOperation op) {
+  void addOperation(DigestOperation op) {
     lst.add(op);
   }
 
@@ -48,15 +53,15 @@ public class digestContainer {
     this.prevPara = prevPara;
   }
 
-  void exportData(XMLStreamWriter writer) {
+  void exportData(XMLStreamWriter writer) throws DigestServiceException {
     try {
       writer.writeAttribute("paragraph", String.valueOf(paraNum));
-      Logger.getLogger(digestContainer.class.getName()).log(Level.INFO, "paraNum:" + paraNum);
+        LOG.info("paraNum:" + paraNum);
       writer.writeAttribute("document", doc);
       writer.writeStartElement("text");
       writer.writeAttribute("type", "skeleton");
       resultStr result = new resultStr();
-      for (digestOperation d : lst) {
+      for (DigestOperation d : lst) {
         d.exportdata(writer, result);
       }
 
@@ -77,9 +82,9 @@ public class digestContainer {
       writer.writeCharacters("<p>" + result.mixed + "</p>");
       writer.writeEndElement();
 
-      Logger.getLogger(digestContainer.class.getName()).log(Level.FINE, "result.mixed :" + result.mixed);
+        LOG.info( "result.mixed :" + result.mixed);
     } catch (XMLStreamException ex) {
-      Logger.getLogger(digestContainer.class.getName()).log(Level.SEVERE, null, ex);
+        LOG.error(null, ex);
     }
   }
 

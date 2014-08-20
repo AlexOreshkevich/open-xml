@@ -2,10 +2,13 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package pro.redsoft.openxml;
+package pro.redsoft.openxml.openoffice;
 
 import com.sun.star.comp.helper.BootstrapException;
 import com.sun.star.lib.util.NativeLibraryLoader;
+import pro.redsoft.openxml.DigestServiceException;
+import pro.redsoft.openxml.logging.DigestLogger;
+import pro.redsoft.openxml.logging.LoggingService;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -29,7 +32,7 @@ import java.util.logging.Logger;
  */
 public class OOoServer {
 
-  static final Logger LOG = Logger.getLogger(OOoServer.class.getName());
+  static final DigestLogger LOG = LoggingService.getLogger(OOoServer.class);
   /**
    * The OOo server process.
    */
@@ -91,7 +94,7 @@ public class OOoServer {
    *
    * @param oooAcceptOption The accept option
    */
-  public void start(String oooAcceptOption) throws BootstrapException, IOException, MalformedURLException {
+  public void start(String oooAcceptOption) throws BootstrapException, IOException,  DigestServiceException {
     try {
       // find office executable relative to this class's class loader
       String sOffice = System.getProperty("os.name").startsWith("Windows") ? "soffice.exe" : "soffice";
@@ -107,7 +110,7 @@ public class OOoServer {
         loader = new URLClassLoader(oooExecFolderURL);
         fOffice = NativeLibraryLoader.getResource(loader, sOffice);
         if (fOffice == null) {
-          throw new BootstrapException("no office executable found!");
+          throw new DigestServiceException("no office executable found!");
         }
       }
 
@@ -141,8 +144,7 @@ public class OOoServer {
 
       LOG.info("done Start soffice : ");
     } catch (Exception ex) {
-      LOG.log(Level.SEVERE, oooExecFolder, ex);
-      throw new RuntimeException(ex);
+        throw new DigestServiceException(oooExecFolder,ex);
     }
   }
 
@@ -154,7 +156,7 @@ public class OOoServer {
    * <p>
    * If there has been a previous start, kill destroys the process.
    */
-  public void kill() {
+  public void kill() throws DigestServiceException {
     try {
       LOG.info("KILL");
       if (oooProcess != null) {
@@ -177,7 +179,7 @@ public class OOoServer {
         oooProcess = null;
       }
     } catch (Exception ex) {
-      LOG.log(Level.SEVERE, "", ex);
+      LOG.error("", ex);
     }
   }
 
@@ -195,7 +197,7 @@ public class OOoServer {
             LOG.info(prefix + s);
           }
         } catch (java.io.IOException e) {
-          LOG.log(Level.SEVERE, "", e);
+          e.printStackTrace();
         }
       }
     }.start();

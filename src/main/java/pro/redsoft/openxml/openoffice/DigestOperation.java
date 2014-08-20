@@ -2,7 +2,10 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package pro.redsoft.openxml;
+package pro.redsoft.openxml.openoffice;
+
+import pro.redsoft.openxml.logging.DigestLogger;
+import pro.redsoft.openxml.logging.LoggingService;
 
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
@@ -11,17 +14,18 @@ import java.util.logging.Logger;
 
 
 /**
- * @author John
+ * @author crzang
  */
-public class digestOperation {
-  static final Logger LOG = Logger.getLogger(Dgst.class.getName());
+public class DigestOperation {
+
+  static final DigestLogger LOG = LoggingService.getLogger(DigestOperation.class);
   String type;
   String redlineid;
   String afterTxt;
   String beforeTxt;
   String curTxt;
 
-  public digestOperation(String type, String redlineid, String affetTxt, String beforeTxt, String curTxt) {
+  public DigestOperation(String type, String redlineid, String affetTxt, String beforeTxt, String curTxt) {
     this.type = type;
     this.redlineid = redlineid;
     this.afterTxt = affetTxt;
@@ -129,7 +133,7 @@ public class digestOperation {
         result.mixed = curTxt;
       }
     } catch (XMLStreamException ex) {
-      Logger.getLogger(digestOperation.class.getName()).log(Level.SEVERE, null, ex);
+      Logger.getLogger(DigestOperation.class.getName()).log(Level.SEVERE, null, ex);
     }
   }
 

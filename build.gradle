@@ -23,6 +23,7 @@ ext {
 dependencies {
 
     compile "org.apache.logging.log4j:log4j:$log4jVersion"
+    compile "org.apache.logging.log4j:log4j-api:$log4jVersion"
     compile "org.openoffice:ridl:$openOfficeVersion"
     compile "org.openoffice:juh:$openOfficeVersion"
     compile "org.openoffice:unoil:$openOfficeVersion"
@@ -32,14 +33,9 @@ dependencies {
 }
 jar {
     manifest {
-        attributes 'Main-class': 'pro.redsoft.openxml.dgst'
+        attributes 'Main-class': 'pro.redsoft.openxml.DigestMain'
     }
-    configurations.compile.collect {
-        File file ->
-            if (file.path.contains("openoffice")) {
-                from zipTree(file.path)
-            }
-    }
+    from { configurations.compile.collect {it.isDirectory() ? it : zipTree(it) } }
 }
 
 sourceSets {
@@ -50,6 +46,4 @@ sourceSets {
         output.resourcesDir = "build/classes/main"
     }
 }
-test{
 
-}

@@ -2,10 +2,11 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package pro.redsoft.openxml;
+package pro.redsoft.openxml.connector;
 
 import com.sun.star.comp.helper.BootstrapException;
 import com.sun.star.uno.XComponentContext;
+import pro.redsoft.openxml.openoffice.OOoServer;
 
 /**
  * A Bootstrap Connector which uses a socket to connect to an OOo server.

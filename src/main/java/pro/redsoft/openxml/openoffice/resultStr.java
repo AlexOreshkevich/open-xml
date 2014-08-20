@@ -2,10 +2,10 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package pro.redsoft.openxml;
+package pro.redsoft.openxml.openoffice;
 
 /**
- * @author John
+ * @author crzang
  */
 public class resultStr {
   String before = "";
